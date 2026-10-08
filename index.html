@@ -393,25 +393,34 @@ function filt(items,keys){
 }
 function bar(pct,color,w){pct=Math.max(0,Math.min(100,pct||0));return `<div class="barwrap"><div class="bar"><i data-w="${pct}" style="background:${color}"></i></div><span class="barv">${w!=null?w:Math.round(pct)+'%'}</span></div>`;}
 function animBars(){document.querySelectorAll('.bar i[data-w]').forEach(b=>{requestAnimationFrame(()=>{b.style.width=b.dataset.w+'%';});});}
-// gráfico 2025 vs 2026 (+ projeção tracejada)
-function fyChart(y25,y26,proj,col){
-  col=col||'#13C79A'; const W=560,H=186,pl=24,pr=8,pt=12,pb=20;
-  const all=y25.concat(y26,proj||[]).filter(v=>v!=null); const max=Math.max.apply(0,all)*1.12;
+// gráfico 2025 vs 2026 ACUMULADO (+ projeção tracejada) — sempre sobe, mostra o ganho do ano
+function fyChart(c25,c26,proj,col){
+  col=col||'#13C79A'; const cid=col.replace('#','');
+  const W=720,H=250,pl=14,pr=60,pt=16,pb=26;
+  const all=c25.concat(c26,proj||[]); const max=Math.max.apply(0,all)*1.08;
   const xs=i=>pl+(W-pl-pr)*(i/11), ys=v=>H-pb-(H-pt-pb)*(v/max);
-  const path=arr=>{let d='',pen=false; arr.forEach((v,i)=>{if(v==null){pen=false;return;} d+=`${pen?'L':'M'} ${xs(i).toFixed(1)} ${ys(v).toFixed(1)} `;pen=true;}); return d;};
-  const l25=path(y25.concat(Array(12-y25.length).fill(null)));
-  const l26=path(y26.concat(Array(12-y26.length).fill(null)));
-  let pj=Array(12).fill(null); if(proj&&proj.length){const st=y26.length-1; pj[st]=y26[y26.length-1]; proj.forEach((v,k)=>pj[st+1+k]=v);}
-  const l26p=path(pj);
+  const line=a=>a.map((v,i)=>`${i?'L':'M'} ${xs(i).toFixed(1)} ${ys(v).toFixed(1)}`).join(' ');
+  const p26=c26.map((v,i)=>[xs(i),ys(v)]);
+  const d26=p26.map((q,i)=>`${i?'L':'M'} ${q[0].toFixed(1)} ${q[1].toFixed(1)}`).join(' ');
+  const area=d26+` L ${p26[p26.length-1][0].toFixed(1)} ${(H-pb).toFixed(1)} L ${p26[0][0].toFixed(1)} ${(H-pb).toFixed(1)} Z`;
+  let dpj=''; if(proj&&proj.length){const st=c26.length-1; const pj=[c26[st]].concat(proj); dpj=pj.map((v,k)=>`${k?'L':'M'} ${xs(st+k).toFixed(1)} ${ys(v).toFixed(1)}`).join(' ');}
   const M=['J','F','M','A','M','J','J','A','S','O','N','D'];
-  const labs=M.map((m,i)=>`<text x="${xs(i).toFixed(1)}" y="${H-5}" fill="var(--mut)" font-size="9.5" text-anchor="middle">${m}</text>`).join('');
-  const gl=[0.25,0.5,0.75,1].map(f=>`<line x1="${pl}" y1="${(H-pb-(H-pt-pb)*f).toFixed(1)}" x2="${W-pr}" y2="${(H-pb-(H-pt-pb)*f).toFixed(1)}" stroke="var(--line)" stroke-width="1"/>`).join('');
-  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">${gl}
-    <path d="${l25}" fill="none" stroke="#8A9A8E" stroke-width="2" opacity=".85"/>
-    <path d="${l26}" fill="none" stroke="${col}" stroke-width="2.8"/>
-    <path d="${l26p}" fill="none" stroke="${col}" stroke-width="2.6" stroke-dasharray="4 4" opacity=".75"/>
+  const labs=M.map((m,i)=>`<text x="${xs(i).toFixed(1)}" y="${H-7}" fill="var(--mut)" font-size="10.5" text-anchor="middle">${m}</text>`).join('');
+  const gl=[0,.25,.5,.75,1].map(f=>{const y=(H-pb-(H-pt-pb)*f).toFixed(1);return `<line x1="${pl}" y1="${y}" x2="${W-pr}" y2="${y}" stroke="var(--line)" stroke-width="1"/>`;}).join('');
+  const e25=c25[c25.length-1], e26=(proj&&proj.length)?proj[proj.length-1]:c26[c26.length-1];
+  const k=v=>(v/1000).toFixed(1).replace('.',',')+'k';
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">${gl}
+    <defs><linearGradient id="g${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".24"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>
+    <path d="${area}" fill="url(#g${cid})"/>
+    <path d="${line(c25)}" fill="none" stroke="#8A9A8E" stroke-width="2.4" opacity=".9"/>
+    <path d="${d26}" fill="none" stroke="${col}" stroke-width="3.4" stroke-linecap="round"/>
+    ${dpj?`<path d="${dpj}" fill="none" stroke="${col}" stroke-width="3.2" stroke-dasharray="6 5" opacity=".85"/>`:''}
+    <circle cx="${xs(11).toFixed(1)}" cy="${ys(e25).toFixed(1)}" r="4" fill="#8A9A8E"/>
+    <circle cx="${xs(11).toFixed(1)}" cy="${ys(e26).toFixed(1)}" r="5" fill="${col}"/>
+    <text x="${(W-pr+8)}" y="${(ys(e25)+16).toFixed(1)}" fill="#8A9A8E" font-size="12" font-weight="700">${k(e25)}</text>
+    <text x="${(W-pr+8)}" y="${(ys(e26)-7).toFixed(1)}" fill="${col}" font-size="14" font-weight="800">${k(e26)}</text>
     ${labs}</svg>
-    <div class="legend"><span><i style="background:#8A9A8E"></i>2025</span><span><i style="background:${col}"></i>2026 real</span><span><i style="background:${col};opacity:.6"></i>2026 projetado</span></div>`;
+    <div class="legend"><span><i style="background:#8A9A8E"></i>2025 acumulado</span><span><i style="background:${col}"></i>2026 acumulado</span><span><i style="background:${col};opacity:.6"></i>projeção Out–Dez</span></div>`;
 }
 
 // ---------- RENDERERS ----------
@@ -461,16 +470,18 @@ function rResumo(){
     <div class="card"><h3>Pedidos em aberto · maiores clientes</h3>${topBars}<div class="note">Total ${fmt(GRAND)} cx. Abra "Pedidos" para a matriz SKU × cliente.</div></div>
   </div>
   <div style="font-weight:800;font-size:16px;margin:24px 0 12px;letter-spacing:-.2px">Volume de caixas · 2025 vs 2026 · empresa</div>
-  <div class="grid2" style="grid-template-columns:1.5fr 1fr">
-    <div class="card"><h3>Faturamento mensal (caixas)</h3>${fyChart([5922,7268,7345,7069,6450,7224,7316,9080,7846,8385,7320,5563],[8028,7436,7626,6997,6524,7669,7349,7614,8347],[8650,7552,5739],'#13C79A')}
-      <div class="note">Linha cheia = realizado · tracejado = projeção Out–Dez (sazonalidade 2025 ajustada pelo ritmo do ano). Só volumes, sem R$.</div></div>
-    <div class="card"><h3>Fechamento do ano (FY)</h3>
-      <div style="display:flex;flex-direction:column;gap:12px;margin-top:6px">
-        <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="mut">FY 2025</span><b style="font-size:21px">${fmt(86788)}<small class="mut" style="font-size:12px;font-weight:600"> cx</small></b></div>
-        <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="mut">2026 jan–set</span><b style="font-size:21px">${fmt(67590)}<small class="mut" style="font-size:12px;font-weight:600"> cx</small></b></div>
-        <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="color:var(--teal);font-weight:700">FY 2026 proj.</span><b style="font-size:26px;color:var(--teal)">${fmt(89531)}<small class="mut" style="font-size:12px;font-weight:600"> cx</small></b></div>
-        <span class="pill ok" style="align-self:flex-start">+3,2% vs 2025</span>
-      </div></div>
+  <div class="card" style="padding:18px 20px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+      <h3 style="margin:0">Acumulado no ano (caixas) · 2026 segue acima de 2025</h3>
+      <span class="pill ok">FY 2026 proj. +3,2%</span></div>
+    ${fyChart([5922,13190,20535,27604,34054,41278,48594,57674,65520,73905,81225,86788],[8028,15464,23090,30087,36611,44280,51629,59243,67590],[76240,83792,89531],'#13C79A')}
+    <div class="note">Acumulado = soma do ano até o mês. A linha de 2026 fica acima de 2025 o ano todo; a queda visível em Dez é sazonal (todo Dez é mais fraco), mas o <b>total do ano cresce</b>. Tracejado = projeção Out–Dez. Só volumes, sem R$.</div>
+  </div>
+  <div class="kpis" style="margin-top:14px">
+    <div class="kpi"><div class="l">FY 2025</div><div class="v">${fmt(86788)}<small> cx</small></div></div>
+    <div class="kpi"><div class="l">2026 jan–set</div><div class="v">${fmt(67590)}<small> cx</small></div></div>
+    <div class="kpi accent"><div class="l">FY 2026 projeção</div><div class="v" style="color:var(--teal)">${fmt(89531)}<small> cx</small></div></div>
+    <div class="kpi ok"><div class="l">Variação FY</div><div class="v">+3,2<small>%</small></div></div>
   </div>
   <div style="font-weight:800;font-size:16px;margin:24px 0 12px;letter-spacing:-.2px">Atalhos</div>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px">${quick}</div>`;
@@ -611,6 +622,7 @@ function rSams(){
   const firmeTot=FIRME.reduce((a,b)=>a+b.cx,0), sistTot=FIRME.reduce((a,b)=>a+b.sistema,0);
   const est=219, faltaFirme=Math.max(0,firmeTot-est), phantom=sistTot-firmeTot;
   const S25=[1776,1565,703,584,662,1278,1689,122,668,1233,1147,884], S26=[1946,2604,386,1051,657,2511,1575,2832,1161];
+  const cum=a=>{let s=0;return a.map(v=>s+=v);};
   const yrows=(s.ytd||[]).map(x=>`<tr>
       <td class="l">CD ${x.cd}</td><td>${fmt(x.ped)}</td><td class="mut">${fmt(x.fat)}</td>
       <td style="color:var(--ambar)">${fmt(x.saldo)}</td>
@@ -650,17 +662,19 @@ function rSams(){
    <tbody>${frows}</tbody></table></div>
    <div class="note">Cajamar validado pelo Comercial (nota 660462): firme <b>1.612 cx</b> — o Sankhya mostra <b>${fmt(5864)}</b>, gap <b>4.252 cx fantasma</b> (598017+598022 e outros, dar baixa). PE/RJ/DF/RS = pendente do sistema, a validar com o Comercial até bater.</div></div>
 
-  <h3 style="color:var(--azul);font-size:12px;text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin:18px 2px 8px">Volume SAM's · 2025 vs 2026 (caixas)</h3>
-  <div class="grid2" style="grid-template-columns:1.5fr 1fr">
-    <div class="card"><h3>Faturamento mensal (caixas)</h3>${fyChart(S25,S26,[1466,1466,1466],'#5C9BFF')}
-      <div class="note">Tracejado = projeção Out–Dez pelo firme em aberto (${fmt(firmeTot)} cx). Só volumes, sem R$.</div></div>
-    <div class="card"><h3>Fechamento do ano (FY)</h3>
-      <div style="display:flex;flex-direction:column;gap:12px;margin-top:6px">
-        <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="mut">FY 2025</span><b style="font-size:21px">${fmt(12311)}<small class="mut" style="font-size:12px;font-weight:600"> cx</small></b></div>
-        <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="mut">2026 jan–set</span><b style="font-size:21px">${fmt(14723)}<small class="mut" style="font-size:12px;font-weight:600"> cx</small></b></div>
-        <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="color:var(--azul);font-weight:700">FY 2026 proj.</span><b style="font-size:26px;color:var(--azul)">${fmt(19121)}<small class="mut" style="font-size:12px;font-weight:600"> cx</small></b></div>
-        <span class="pill ok" style="align-self:flex-start">+55% vs 2025</span>
-      </div></div>
+  <h3 style="color:var(--azul);font-size:12px;text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin:20px 2px 10px">Volume SAM's · 2025 vs 2026 (caixas)</h3>
+  <div class="card" style="padding:18px 20px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+      <h3 style="margin:0">Acumulado no ano (caixas) · 2026 muito acima de 2025</h3>
+      <span class="pill ok">FY 2026 proj. +55%</span></div>
+    ${fyChart(cum(S25),cum(S26),[cum(S26).slice(-1)[0]+Math.round(firmeTot/3),cum(S26).slice(-1)[0]+2*Math.round(firmeTot/3),cum(S26).slice(-1)[0]+3*Math.round(firmeTot/3)],'#5C9BFF')}
+    <div class="note">Acumulado = soma do ano até o mês. A linha de 2026 está bem acima de 2025 o ano todo. Tracejado = projeção Out–Dez pelo firme em aberto (${fmt(firmeTot)} cx). Só volumes, sem R$.</div>
+  </div>
+  <div class="kpis" style="margin-top:14px">
+    <div class="kpi"><div class="l">FY 2025</div><div class="v">${fmt(12311)}<small> cx</small></div></div>
+    <div class="kpi"><div class="l">2026 jan–set</div><div class="v">${fmt(14723)}<small> cx</small></div></div>
+    <div class="kpi blue"><div class="l">FY 2026 projeção</div><div class="v" style="color:var(--azul)">${fmt(19121)}<small> cx</small></div></div>
+    <div class="kpi ok"><div class="l">Variação FY</div><div class="v">+55<small>%</small></div></div>
   </div>`;
 }
 
