@@ -393,6 +393,26 @@ function filt(items,keys){
 }
 function bar(pct,color,w){pct=Math.max(0,Math.min(100,pct||0));return `<div class="barwrap"><div class="bar"><i data-w="${pct}" style="background:${color}"></i></div><span class="barv">${w!=null?w:Math.round(pct)+'%'}</span></div>`;}
 function animBars(){document.querySelectorAll('.bar i[data-w]').forEach(b=>{requestAnimationFrame(()=>{b.style.width=b.dataset.w+'%';});});}
+// gráfico 2025 vs 2026 (+ projeção tracejada)
+function fyChart(y25,y26,proj,col){
+  col=col||'#13C79A'; const W=560,H=186,pl=24,pr=8,pt=12,pb=20;
+  const all=y25.concat(y26,proj||[]).filter(v=>v!=null); const max=Math.max.apply(0,all)*1.12;
+  const xs=i=>pl+(W-pl-pr)*(i/11), ys=v=>H-pb-(H-pt-pb)*(v/max);
+  const path=arr=>{let d='',pen=false; arr.forEach((v,i)=>{if(v==null){pen=false;return;} d+=`${pen?'L':'M'} ${xs(i).toFixed(1)} ${ys(v).toFixed(1)} `;pen=true;}); return d;};
+  const l25=path(y25.concat(Array(12-y25.length).fill(null)));
+  const l26=path(y26.concat(Array(12-y26.length).fill(null)));
+  let pj=Array(12).fill(null); if(proj&&proj.length){const st=y26.length-1; pj[st]=y26[y26.length-1]; proj.forEach((v,k)=>pj[st+1+k]=v);}
+  const l26p=path(pj);
+  const M=['J','F','M','A','M','J','J','A','S','O','N','D'];
+  const labs=M.map((m,i)=>`<text x="${xs(i).toFixed(1)}" y="${H-5}" fill="var(--mut)" font-size="9.5" text-anchor="middle">${m}</text>`).join('');
+  const gl=[0.25,0.5,0.75,1].map(f=>`<line x1="${pl}" y1="${(H-pb-(H-pt-pb)*f).toFixed(1)}" x2="${W-pr}" y2="${(H-pb-(H-pt-pb)*f).toFixed(1)}" stroke="var(--line)" stroke-width="1"/>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">${gl}
+    <path d="${l25}" fill="none" stroke="#8A9A8E" stroke-width="2" opacity=".85"/>
+    <path d="${l26}" fill="none" stroke="${col}" stroke-width="2.8"/>
+    <path d="${l26p}" fill="none" stroke="${col}" stroke-width="2.6" stroke-dasharray="4 4" opacity=".75"/>
+    ${labs}</svg>
+    <div class="legend"><span><i style="background:#8A9A8E"></i>2025</span><span><i style="background:${col}"></i>2026 real</span><span><i style="background:${col};opacity:.6"></i>2026 projetado</span></div>`;
+}
 
 // ---------- RENDERERS ----------
 function render(keepFocus){
@@ -407,7 +427,7 @@ function rResumo(){
   const p=DATA.producao||{}, rup=DATA.ruptura||{}, sams=DATA.sams||{};
   const meta=DATA.meta, real=(DATA.evolucao&&DATA.evolucao.fat_mtd)||DATA.realizado||0;
   const pctMeta=meta?Math.round(real/meta*100):0;
-  const firme=(sams.firme||[]).reduce((a,b)=>a+(b.cx||0),0);
+  const firme=4398;
   const GRAND=6498;
   const PRAZ=[['Atrasado',23,'var(--verm)'],['Hoje / D-1',10,'var(--ambar)'],['Esta semana',27,'var(--teal)'],['No prazo',27,'var(--mut)']];
   const maxP=Math.max.apply(0,PRAZ.map(x=>x[1]));
@@ -439,6 +459,18 @@ function rResumo(){
   <div class="grid2" style="grid-template-columns:1fr 1fr">
     <div class="card"><h3>Prazos de produção · por urgência</h3>${prazBars}<div class="note">Entrega 7 DU · produção D-1. Abra "Prazos" para a fila completa.</div></div>
     <div class="card"><h3>Pedidos em aberto · maiores clientes</h3>${topBars}<div class="note">Total ${fmt(GRAND)} cx. Abra "Pedidos" para a matriz SKU × cliente.</div></div>
+  </div>
+  <div style="font-weight:800;font-size:16px;margin:24px 0 12px;letter-spacing:-.2px">Volume de caixas · 2025 vs 2026 · empresa</div>
+  <div class="grid2" style="grid-template-columns:1.5fr 1fr">
+    <div class="card"><h3>Faturamento mensal (caixas)</h3>${fyChart([5922,7268,7345,7069,6450,7224,7316,9080,7846,8385,7320,5563],[8028,7436,7626,6997,6524,7669,7349,7614,8347],[8650,7552,5739],'#13C79A')}
+      <div class="note">Linha cheia = realizado · tracejado = projeção Out–Dez (sazonalidade 2025 ajustada pelo ritmo do ano). Só volumes, sem R$.</div></div>
+    <div class="card"><h3>Fechamento do ano (FY)</h3>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:6px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="mut">FY 2025</span><b style="font-size:21px">${fmt(86788)}<small class="mut" style="font-size:12px;font-weight:600"> cx</small></b></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="mut">2026 jan–set</span><b style="font-size:21px">${fmt(67590)}<small class="mut" style="font-size:12px;font-weight:600"> cx</small></b></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="color:var(--teal);font-weight:700">FY 2026 proj.</span><b style="font-size:26px;color:var(--teal)">${fmt(89531)}<small class="mut" style="font-size:12px;font-weight:600"> cx</small></b></div>
+        <span class="pill ok" style="align-self:flex-start">+3,2% vs 2025</span>
+      </div></div>
   </div>
   <div style="font-weight:800;font-size:16px;margin:24px 0 12px;letter-spacing:-.2px">Atalhos</div>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px">${quick}</div>`;
@@ -574,15 +606,19 @@ function rSams(){
   const s=DATA.sams;
   const Y={ped:0,fat:0,saldo:0}; (s.ytd||[]).forEach(x=>{Y.ped+=x.ped;Y.fat+=x.fat;Y.saldo+=x.saldo;});
   const pctFat=Y.ped?Math.round(Y.fat/Y.ped*100):0;
-  const firmeTot=(s.firme||[]).reduce((a,b)=>a+b.cx,0);
-  const est=s.est400||0, faltaFirme=Math.max(0,firmeTot-est);
+  // firme re-puxado 08/10 (pendente sistema) + Comercial
+  const FIRME=[{cd:'Cajamar',sistema:5864,cx:1612,src:'Comercial'},{cd:'PE',sistema:1505,cx:1505,src:'sistema'},{cd:'DF',sistema:667,cx:667,src:'sistema'},{cd:'RJ',sistema:423,cx:423,src:'sistema'},{cd:'RS',sistema:191,cx:191,src:'sistema'}];
+  const firmeTot=FIRME.reduce((a,b)=>a+b.cx,0), sistTot=FIRME.reduce((a,b)=>a+b.sistema,0);
+  const est=219, faltaFirme=Math.max(0,firmeTot-est), phantom=sistTot-firmeTot;
+  const S25=[1776,1565,703,584,662,1278,1689,122,668,1233,1147,884], S26=[1946,2604,386,1051,657,2511,1575,2832,1161];
   const yrows=(s.ytd||[]).map(x=>`<tr>
       <td class="l">CD ${x.cd}</td><td>${fmt(x.ped)}</td><td class="mut">${fmt(x.fat)}</td>
       <td style="color:var(--ambar)">${fmt(x.saldo)}</td>
       <td>${bar(x.ped?x.fat/x.ped*100:0, 'var(--azul)', (x.ped?Math.round(x.fat/x.ped*100):0)+'%')}</td></tr>`).join('');
-  const frows=(s.firme||[]).map(x=>`<tr>
-      <td class="l">CD ${x.cd}</td><td class="mut">${fmt(x.sistema||x.cx)}</td><td style="color:var(--teal)">${fmt(x.cx)}</td>
-      <td>${x.src==='Comercial'?'<span class="pill ok">Comercial</span>':'<span class="pill mut">sistema</span>'}</td></tr>`).join('');
+  const frows=FIRME.map(x=>{const gap=x.sistema-x.cx; return `<tr>
+      <td class="l">CD ${x.cd}</td><td class="mut">${fmt(x.sistema)}</td><td style="color:var(--teal)">${fmt(x.cx)}</td>
+      <td style="${gap>0?'color:var(--ambar)':''}">${gap>0?'−'+fmt(gap):'—'}</td>
+      <td>${x.src==='Comercial'?'<span class="pill ok">Comercial</span>':'<span class="pill mut">sistema</span>'}</td></tr>`;}).join('');
   return `
   <div class="vhead"><span class="idx">05</span><span class="tag sam">SAM'S CLUB</span><h2 style="margin-left:4px">Gestão × Produção</h2>
     <div class="sub">Duas leituras: <b>YTD</b> (ano, diretoria) e <b>firme</b> (ago+, o que o PCP produz)<br>sortimento 400g · 5 CDs</div></div>
@@ -607,12 +643,25 @@ function rSams(){
     <div class="kpi accent"><div class="l">Firme real</div><div class="v">${fmt(firmeTot)}<small> cx</small></div></div>
     <div class="kpi red"><div class="l">Estoque 400g</div><div class="v">${fmt(est)}<small> cx</small></div></div>
     <div class="kpi red"><div class="l">Falta produzir</div><div class="v">${fmt(faltaFirme)}<small> cx</small></div></div>
-    <div class="kpi amb"><div class="l">Fantasma (baixar)</div><div class="v">${fmt(s.phantom||0)}<small> cx</small></div></div>
+    <div class="kpi amb"><div class="l">Fantasma (baixar)</div><div class="v">${fmt(phantom)}<small> cx</small></div></div>
   </div>
-  <div class="card"><h3>Por CD · pendente sistema × firme real</h3>
-   <div class="tblwrap"><table><thead><tr><th class="l">CD</th><th>Pend. sistema</th><th>Firme real</th><th>Fonte</th></tr></thead>
+  <div class="card"><h3>Por CD · pendente sistema × firme real (re-puxado 08/10)</h3>
+   <div class="tblwrap"><table><thead><tr><th class="l">CD</th><th>Pend. sistema</th><th>Firme real</th><th>Gap</th><th>Fonte</th></tr></thead>
    <tbody>${frows}</tbody></table></div>
-   <div class="note">Cajamar validado pelo Comercial (nota 660462, R$745k): real 1.612 cx — o Sankhya mostrava 5.268, sendo 3.656 fantasma (598017+598022, dar baixa). Demais CDs = pendente do sistema, a validar com Comercial.</div></div>`;
+   <div class="note">Cajamar validado pelo Comercial (nota 660462): firme <b>1.612 cx</b> — o Sankhya mostra <b>${fmt(5864)}</b>, gap <b>4.252 cx fantasma</b> (598017+598022 e outros, dar baixa). PE/RJ/DF/RS = pendente do sistema, a validar com o Comercial até bater.</div></div>
+
+  <h3 style="color:var(--azul);font-size:12px;text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin:18px 2px 8px">Volume SAM's · 2025 vs 2026 (caixas)</h3>
+  <div class="grid2" style="grid-template-columns:1.5fr 1fr">
+    <div class="card"><h3>Faturamento mensal (caixas)</h3>${fyChart(S25,S26,[1466,1466,1466],'#5C9BFF')}
+      <div class="note">Tracejado = projeção Out–Dez pelo firme em aberto (${fmt(firmeTot)} cx). Só volumes, sem R$.</div></div>
+    <div class="card"><h3>Fechamento do ano (FY)</h3>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:6px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="mut">FY 2025</span><b style="font-size:21px">${fmt(12311)}<small class="mut" style="font-size:12px;font-weight:600"> cx</small></b></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="mut">2026 jan–set</span><b style="font-size:21px">${fmt(14723)}<small class="mut" style="font-size:12px;font-weight:600"> cx</small></b></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="color:var(--azul);font-weight:700">FY 2026 proj.</span><b style="font-size:26px;color:var(--azul)">${fmt(19121)}<small class="mut" style="font-size:12px;font-weight:600"> cx</small></b></div>
+        <span class="pill ok" style="align-self:flex-start">+55% vs 2025</span>
+      </div></div>
+  </div>`;
 }
 
 function rCascata(){
@@ -789,10 +838,23 @@ function rPrazos(){
     <div class="kpi ok"><div class="l">Esta semana</div><div class="v">27<small> · 505 cx</small></div></div>
     <div class="kpi"><div class="l">No prazo</div><div class="v">27<small> · 555 cx</small></div></div>
   </div>
-  <div class="card"><h3>Fila de produção · próximos dias (87 ped · 1.383 cx)</h3>
+  <div class="card"><h3>Fila de produção · próximos dias (87 ped · 1.383 cx · exclui SAM's)</h3>
    <div class="tblwrap"><table><thead><tr><th class="l">Pedido · Cliente</th><th>Entrada</th><th>Lim. produção</th><th>Lim. faturam.</th><th>DU rest.</th><th>Caixas</th><th>Status</th></tr></thead>
    <tbody>${rows||'<tr><td colspan="7" class="empty">Nada encontrado</td></tr>'}</tbody></table></div>
-   <div class="note">Lim. produção = entrada + 6 DU (D-1) · Lim. faturamento = entrada + 7 DU · feriados BR considerados. DU rest. = dias úteis de hoje até o limite de produção.</div></div>`;
+   <div class="note">Lim. produção = entrada + 6 DU (D-1) · Lim. faturamento = entrada + 7 DU · feriados BR considerados. DU rest. = dias úteis de hoje até o limite de produção.</div></div>
+
+  <h3 style="color:#5C9BFF;font-size:12px;text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin:18px 2px 8px">SAM's Club · pedidos consolidados (batch por CD)</h3>
+  <div class="card"><h3>Firme por CD · produção em lote</h3>
+   <div class="tblwrap"><table><thead><tr><th class="l">CD</th><th>Pend. sistema</th><th>Firme real</th><th>Fonte</th></tr></thead>
+   <tbody>
+     <tr><td class="l">Cajamar</td><td class="mut">${fmt(5864)}</td><td style="color:var(--teal)">${fmt(1612)}</td><td><span class="pill ok">Comercial</span></td></tr>
+     <tr><td class="l">PE</td><td class="mut">${fmt(1505)}</td><td style="color:var(--teal)">${fmt(1505)}</td><td><span class="pill mut">sistema</span></td></tr>
+     <tr><td class="l">DF</td><td class="mut">${fmt(667)}</td><td style="color:var(--teal)">${fmt(667)}</td><td><span class="pill mut">sistema</span></td></tr>
+     <tr><td class="l">RJ</td><td class="mut">${fmt(423)}</td><td style="color:var(--teal)">${fmt(423)}</td><td><span class="pill mut">sistema</span></td></tr>
+     <tr><td class="l">RS</td><td class="mut">${fmt(191)}</td><td style="color:var(--teal)">${fmt(191)}</td><td><span class="pill mut">sistema</span></td></tr>
+     <tr style="background:var(--surface2)"><td class="l" style="font-weight:800">Total firme</td><td class="mut" style="font-weight:800">${fmt(8650)}</td><td style="color:var(--teal);font-weight:800">${fmt(4398)}</td><td></td></tr>
+   </tbody></table></div>
+   <div class="note">SAM's é produção em <b>lote por CD</b>, fora da régua diária de 7 DU. Firme = o que de fato vai produzir (Cajamar pelo Comercial; demais pendente do sistema). Ver aba SAM's para o detalhe e o 2025×2026.</div></div>`;
 }
 
 // ---------- DRILL-DOWN ----------
