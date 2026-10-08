@@ -336,6 +336,7 @@ const fmt=n=>Number(Math.round(n||0)).toLocaleString('pt-BR');
 const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
 
 const SCREENS=[
+  {id:'resumo', ic:'🏠', nm:'Resumo', sub:'Visão geral', co:'#13C79A'},
   {id:'producao', ic:'🏭', nm:'Produção', sub:'Necessidade × Estoque', co:'#13C79A'},
   {id:'suprimento', ic:'📦', nm:'Suprimento', sub:'Carteira × Estoque', co:'#5CC8FF'},
   {id:'pedidos', ic:'📋', nm:'Pedidos', sub:'SKU × cliente', co:'#38BDF8'},
@@ -348,7 +349,7 @@ const SCREENS=[
   {id:'insumos', ic:'🍌', nm:'Insumos', sub:'Banana & MP', co:'#F4C430'},
 ];
 function tint(hex,a){const n=parseInt(hex.slice(1),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`;}
-let cur='producao', query='';
+let cur='resumo', query='';
 
 // ---- build nav + tabbar ----
 function rupCount(){return (DATA.ruptura&&DATA.ruptura.n)||0;}
@@ -397,9 +398,50 @@ function animBars(){document.querySelectorAll('.bar i[data-w]').forEach(b=>{requ
 function render(keepFocus){
   buildNav(); setHead();
   const v=document.getElementById('view');
-  v.innerHTML = ({producao:rProd, suprimento:rSup, pedidos:rPedidos, rupturas:rRup, resultado:rRes, sams:rSams, cascata:rCascata, tabletes:rTabletes, prazos:rPrazos, insumos:rInsumos}[cur])();
+  v.innerHTML = ({resumo:rResumo, producao:rProd, suprimento:rSup, pedidos:rPedidos, rupturas:rRup, resultado:rRes, sams:rSams, cascata:rCascata, tabletes:rTabletes, prazos:rPrazos, insumos:rInsumos}[cur])();
   animBars();
   if(keepFocus){const q=document.getElementById('q');q.focus();}
+}
+
+function rResumo(){
+  const p=DATA.producao||{}, rup=DATA.ruptura||{}, sams=DATA.sams||{};
+  const meta=DATA.meta, real=(DATA.evolucao&&DATA.evolucao.fat_mtd)||DATA.realizado||0;
+  const pctMeta=meta?Math.round(real/meta*100):0;
+  const firme=(sams.firme||[]).reduce((a,b)=>a+(b.cx||0),0);
+  const GRAND=6498;
+  const PRAZ=[['Atrasado',23,'var(--verm)'],['Hoje / D-1',10,'var(--ambar)'],['Esta semana',27,'var(--teal)'],['No prazo',27,'var(--mut)']];
+  const maxP=Math.max.apply(0,PRAZ.map(x=>x[1]));
+  const TOPC=[['Cajamar',1612],['PE',1330],['RJ',423],['DF',387],['Sabor a Mundo',370],['Evolud',263],['Carrefour',196]];
+  const maxC=TOPC[0][1];
+  const prazBars=PRAZ.map(x=>`<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px"><span>${x[0]}</span><b>${x[1]} ped</b></div><div style="height:12px;border-radius:6px;background:var(--elev);overflow:hidden"><i style="display:block;height:100%;width:${Math.round(x[1]/maxP*100)}%;background:${x[2]};border-radius:6px"></i></div></div>`).join('');
+  const topBars=TOPC.map(x=>`<div style="margin:9px 0"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:3px"><span>${x[0]}</span><b>${fmt(x[1])} cx</b></div><div style="height:11px;border-radius:6px;background:var(--elev);overflow:hidden"><i style="display:block;height:100%;width:${Math.round(x[1]/maxC*100)}%;background:var(--azul);border-radius:6px"></i></div></div>`).join('');
+  const quick=[
+    ['producao','🏭','Produção',`${p.pct_plano||0}% cobertura`,'#13C79A'],
+    ['pedidos','📋','Pedidos',`${fmt(GRAND)} cx em aberto`,'#38BDF8'],
+    ['rupturas','⚠️','Rupturas',`${rup.n||0} SKUs em risco`,'#FF5B17'],
+    ['tabletes','🍬','Tabletes','Cremosa zerado','#9B8CFF'],
+    ['prazos','⏱️','Prazos','23 atrasados','#FF7A00'],
+    ["sams",'🛒',"SAM's",`${fmt(firme)} cx firme`,'#5C9BFF']
+  ].map(c=>`<div class="card" style="cursor:pointer;padding:14px 15px" onclick="go('${c[0]}')">
+     <div style="display:flex;align-items:center;gap:11px">
+       <div style="width:40px;height:40px;border-radius:11px;background:${c[4]}22;color:${c[4]};display:flex;align-items:center;justify-content:center;font-size:21px;flex:0 0 auto">${c[1]}</div>
+       <div><div style="font-weight:800;font-size:14.5px">${c[2]}</div><div class="mut" style="font-size:12px">${c[3]}</div></div></div></div>`).join('');
+  return `
+  <div class="vhead"><span class="idx">★</span><h2>Resumo Gerencial</h2><span class="tag amb">mês ${DATA.mes_ref||''}</span>
+    <div class="sub">Visão geral da operação · ${DATA.data_ref||''}<br>clique num bloco para abrir a tela</div></div>
+  <div class="kpis">
+    <div class="kpi ${pctMeta>=100?'ok':'amb'}"><div class="l">% da meta (mês)</div><div class="v">${pctMeta}<small>%</small></div></div>
+    <div class="kpi blue"><div class="l">Pedidos em aberto</div><div class="v">${fmt(GRAND)}<small> cx</small></div></div>
+    <div class="kpi ${(p.pct_plano||0)>=60?'ok':'red'}"><div class="l">Cobertura produção</div><div class="v">${p.pct_plano||0}<small>%</small></div></div>
+    <div class="kpi red"><div class="l">Rupturas</div><div class="v">${rup.n||0}<small> SKUs</small></div></div>
+  </div>
+  <div class="alert"><div class="ic">⚠️</div><div><b>Pontos de atenção:</b> Tablete Cremosa <b>zerado</b> · <b>${rup.n||0}</b> SKUs em ruptura · <b>23</b> pedidos atrasados (maioria fantasma — cruzar NF) · SAM's firme <b>${fmt(firme)} cx</b> a produzir.</div></div>
+  <div class="grid2" style="grid-template-columns:1fr 1fr">
+    <div class="card"><h3>Prazos de produção · por urgência</h3>${prazBars}<div class="note">Entrega 7 DU · produção D-1. Abra "Prazos" para a fila completa.</div></div>
+    <div class="card"><h3>Pedidos em aberto · maiores clientes</h3>${topBars}<div class="note">Total ${fmt(GRAND)} cx. Abra "Pedidos" para a matriz SKU × cliente.</div></div>
+  </div>
+  <div style="font-weight:800;font-size:16px;margin:24px 0 12px;letter-spacing:-.2px">Atalhos</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px">${quick}</div>`;
 }
 
 function rProd(){
@@ -787,6 +829,11 @@ function closeDrawer(){document.getElementById('drawer').classList.remove('open'
 
 // init
 (function(){const h=location.hash.slice(1); if(SCREENS.some(s=>s.id===h))cur=h; render();})();
+
+// logo -> volta p/ a página inicial (Resumo)
+(function(){
+  ['.brand','.topbar .mlogo'].forEach(sel=>{const e=document.querySelector(sel); if(e){e.style.cursor='pointer'; e.title='Início · Resumo'; e.addEventListener('click',()=>go('resumo'));}});
+})();
 
 // ---- tema claro/escuro ----
 (function(){
