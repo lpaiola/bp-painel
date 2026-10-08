@@ -35,7 +35,8 @@ body{background:
 .brand .dot{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--teal),var(--verde));box-shadow:0 6px 18px rgba(31,215,154,.35);display:flex;align-items:center;justify-content:center;font-weight:800;color:#06130d;font-size:17px}
 .brand b{font-size:23px;font-weight:800;letter-spacing:-.4px;line-height:1.05}
 .brand small{display:block;font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:1.6px;margin-top:5px;line-height:1.3}
-.nav{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.nav{display:flex;flex-direction:column;gap:8px;margin-top:10px;overflow-y:auto;flex:1 1 auto;min-height:0;padding-right:4px}
+.nav::-webkit-scrollbar{width:6px}.nav::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px}
 .navit{display:flex;align-items:center;gap:15px;padding:14px 15px;border-radius:16px;color:var(--txt2);cursor:pointer;border:1px solid transparent;transition:.25s}
 .navit .ic{width:46px;height:46px;border-radius:13px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:24px;flex:0 0 auto;border:1px solid var(--line);transition:.25s}
 .navit .tx{font-size:17px;font-weight:700;line-height:1.15;letter-spacing:-.2px}
@@ -131,8 +132,9 @@ tbody tr:last-child td{border-bottom:none}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
 
 /* ---------- MOBILE TABBAR + DRAWER ---------- */
-.tabbar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:40;background:rgba(10,17,14,.94);backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:7px 6px calc(7px + env(safe-area-inset-bottom));justify-content:space-around}
-.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;color:var(--mut);border-radius:12px;cursor:pointer;position:relative}
+.tabbar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:40;background:rgba(10,17,14,.94);backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:7px 6px calc(7px + env(safe-area-inset-bottom));justify-content:flex-start;overflow-x:auto;scrollbar-width:none}
+.tabbar::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;min-width:64px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;color:var(--mut);border-radius:12px;cursor:pointer;position:relative}
 .tab .ic{font-size:18px;line-height:1}
 .tab .lb{font-size:9.5px;font-weight:700;letter-spacing:.2px}
 .tab.on{color:var(--teal)}
@@ -336,6 +338,7 @@ const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=nu
 const SCREENS=[
   {id:'producao', ic:'🏭', nm:'Produção', sub:'Necessidade × Estoque', co:'#13C79A'},
   {id:'suprimento', ic:'📦', nm:'Suprimento', sub:'Carteira × Estoque', co:'#5CC8FF'},
+  {id:'pedidos', ic:'📋', nm:'Pedidos', sub:'SKU × cliente', co:'#38BDF8'},
   {id:'rupturas', ic:'⚠️', nm:'Rupturas', sub:'Falta mín. e pedido', co:'#FF5B17'},
   {id:'resultado', ic:'🎯', nm:'Resultado', sub:'% da meta', co:'#F7A519'},
   {id:'sams', ic:'🛒', nm:"SAM's Club", sub:'Pedido × Estoque', co:'#5C9BFF'},
@@ -394,7 +397,7 @@ function animBars(){document.querySelectorAll('.bar i[data-w]').forEach(b=>{requ
 function render(keepFocus){
   buildNav(); setHead();
   const v=document.getElementById('view');
-  v.innerHTML = ({producao:rProd, suprimento:rSup, rupturas:rRup, resultado:rRes, sams:rSams, cascata:rCascata, tabletes:rTabletes, prazos:rPrazos, insumos:rInsumos}[cur])();
+  v.innerHTML = ({producao:rProd, suprimento:rSup, pedidos:rPedidos, rupturas:rRup, resultado:rRes, sams:rSams, cascata:rCascata, tabletes:rTabletes, prazos:rPrazos, insumos:rInsumos}[cur])();
   animBars();
   if(keepFocus){const q=document.getElementById('q');q.focus();}
 }
@@ -617,6 +620,32 @@ function rInsumos(){
     <div class="note">BOM = ficha técnica/receita (Sankhya TGFICP). Estes SKUs têm componente errado ou pacotes conflitantes.</div></div>`;
 }
 
+function rPedidos(){
+  const M={"clients":["Cajamar*","PE","RJ","DF","RS","Sabor a Mundo","Evolud","Carrefour","ME COM","Americanas","JSP","DYSC"],"rows":[{"cod":"5018","nm":"S/ Açúcar 400g","cells":[1355,901,341,178,128,0,0,0,0,0,0,0],"outros":0,"tot":2903},{"cod":"4918","nm":"c/ Açúcar 400g","cells":[192,384,72,204,52,0,0,0,0,0,0,0],"outros":0,"tot":904},{"cod":"1324","nm":"S/ Açúcar 200g","cells":[0,0,0,0,0,135,207,20,100,57,30,10],"outros":254,"tot":813},{"cod":"324","nm":"Bananinha 200g","cells":[0,0,0,0,0,235,0,0,20,19,33,6],"outros":178,"tot":491},{"cod":"1510","nm":"Disp. c/Aç 40x36","cells":[0,0,0,0,0,0,0,0,12,2,6,0],"outros":251,"tot":271},{"cod":"1708","nm":"Disp. S/Aç 40x23","cells":[0,0,0,0,0,0,20,0,30,8,6,0],"outros":205,"tot":269},{"cod":"6832","nm":"Mini Chocolate","cells":[0,0,0,0,0,0,0,176,0,0,0,0],"outros":66,"tot":242},{"cod":"1216","nm":"Disp. S/Aç 20x23","cells":[0,0,0,0,0,0,0,0,0,0,0,22],"outros":161,"tot":183},{"cod":"6218","nm":"Favoritos 400g","cells":[64,26,6,5,2,0,0,0,0,0,0,0],"outros":0,"tot":103},{"cod":"1120","nm":"Disp. c/Aç 20x36","cells":[0,0,0,0,0,0,0,0,0,0,0,22],"outros":79,"tot":101},{"cod":"624","nm":"Lanchinho 140g","cells":[0,0,0,0,0,0,0,0,0,0,10,0],"outros":60,"tot":70},{"cod":"6524","nm":"c/ Nibs 200g","cells":[0,0,0,0,0,0,36,0,0,0,0,0],"outros":8,"tot":44},{"cod":"6118","nm":"c/ Chocolate 400g","cells":[1,19,4,0,1,0,0,0,0,0,0,0],"outros":0,"tot":25},{"cod":"424","nm":"Bananada","cells":[0,0,0,0,0,0,0,0,0,0,0,0],"outros":22,"tot":22},{"cod":"4108","nm":"Paçoquinha S/Aç","cells":[0,0,0,0,0,0,0,0,0,0,0,0],"outros":20,"tot":20},{"cod":"524","nm":"Bala 200g","cells":[0,0,0,0,0,0,0,0,0,0,0,0],"outros":12,"tot":12},{"cod":"3816","nm":"Mix Cacau","cells":[0,0,0,0,0,0,0,0,0,0,0,5],"outros":5,"tot":10},{"cod":"2208","nm":"Paçoquinha","cells":[0,0,0,0,0,0,0,0,0,0,0,0],"outros":8,"tot":8},{"cod":"6624","nm":"Favoritos 200g","cells":[0,0,0,0,0,0,0,0,0,0,0,5],"outros":2,"tot":7}],"colTot":[1612,1330,423,387,183,370,263,196,162,86,85,70],"outroTot":1331,"grand":6498};
+  const rws=filt(M.rows,['nm','cod']);
+  const cell=v=>v?`<td>${fmt(v)}</td>`:'<td class="mut">·</td>';
+  const body=rws.map(r=>`<tr>
+     <td class="l">${r.nm}<small>#${r.cod}</small></td>
+     ${r.cells.map(cell).join('')}
+     <td class="mut">${r.outros?fmt(r.outros):'·'}</td>
+     <td class="cg" style="font-weight:800">${fmt(r.tot)}</td></tr>`).join('');
+  const head=`<tr><th class="l">SKU</th>${M.clients.map(c=>`<th>${c}</th>`).join('')}<th>Outros</th><th>TOTAL</th></tr>`;
+  const foot=`<tr style="background:var(--surface2)"><td class="l" style="font-weight:800">TOTAL</td>${M.colTot.map(v=>`<td style="font-weight:800">${v?fmt(v):'·'}</td>`).join('')}<td style="font-weight:800">${fmt(M.outroTot)}</td><td class="cg" style="font-weight:800">${fmt(M.grand)}</td></tr>`;
+  return `
+  <div class="vhead"><span class="idx">PED</span><h2>Pedidos em aberto</h2><span class="tag" style="background:rgba(56,189,248,.16);color:#38BDF8;border-color:rgba(56,189,248,.3)">SKU × cliente</span>
+    <div class="sub">Espelho do controle Comercial (pedidos-controle)<br>caixas em aberto por SKU e por cliente · 08/10</div></div>
+  <div class="alert" style="background:linear-gradient(90deg,rgba(56,189,248,.12),transparent);border-color:rgba(56,189,248,.25)"><div class="ic" style="background:rgba(56,189,248,.18)">📋</div><div>Total em aberto <b>${fmt(M.grand)} cx</b> em ${M.clients.length} clientes + outros. <b>Cajamar</b> validado pelo Comercial (1.612 cx, nota 660462). Demais CDs SAM's (PE/RJ/DF/RS) = pendente do sistema.</div></div>
+  <div class="kpis">
+    <div class="kpi accent"><div class="l">Total em aberto</div><div class="v">${fmt(M.grand)}<small> cx</small></div></div>
+    <div class="kpi"><div class="l">SKUs</div><div class="v">${M.rows.length}</div></div>
+    <div class="kpi blue"><div class="l">Maior cliente</div><div class="v">${fmt(M.colTot[0])}<small> Cajamar</small></div></div>
+    <div class="kpi"><div class="l">Clientes</div><div class="v">${M.clients.length}<small> +outros</small></div></div>
+  </div>
+  <div class="card"><h3>Matriz · caixas em aberto por SKU × cliente</h3>
+   <div class="tblwrap"><table style="min-width:1060px"><thead>${head}</thead><tbody>${body||'<tr><td colspan="15" class="empty">Nada encontrado</td></tr>'}</tbody><tfoot>${foot}</tfoot></table></div>
+   <div class="note">Cada célula = caixas em aberto do cliente para o SKU. Arraste a tabela para o lado para ver todos os clientes. * Cajamar = Comercial.</div></div>`;
+}
+
 function rTabletes(){
   const TABS=[
    {nm:"S/ Açúcar",cod:10084,st:2706,ap:352,dm:1015},
@@ -770,14 +799,15 @@ function closeDrawer(){document.getElementById('drawer').classList.remove('open'
 
 // ---- modo TV: rotação automática (pausa ao interagir) ----
 let _rot=null,_idle=null;
-function startRot(){ if(window.innerWidth<1200) return; stopRot();
+const TVMODE=/[?&]tv=1/.test(location.search);
+function startRot(){ if(!TVMODE || window.innerWidth<1200) return; stopRot();
   _rot=setInterval(()=>{const i=SCREENS.findIndex(s=>s.id===cur); go(SCREENS[(i+1)%SCREENS.length].id);},20000); }
 function stopRot(){ if(_rot){clearInterval(_rot);_rot=null;} }
 function kick(){ stopRot(); clearTimeout(_idle); _idle=setTimeout(startRot,60000); }
 ['click','touchstart','keydown','mousemove','wheel'].forEach(ev=>document.addEventListener(ev,kick,{passive:true}));
 startRot();
-// recarrega de hora em hora (p/ quando a fonte de dados for atualizada)
-setTimeout(()=>location.reload(), 3600000);
+// recarrega de hora em hora só no modo TV (p/ quando a fonte de dados for atualizada)
+if(TVMODE) setTimeout(()=>location.reload(), 3600000);
 </script>
 </body>
 </html>
