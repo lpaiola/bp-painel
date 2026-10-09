@@ -335,18 +335,32 @@ const DATA = {"data_ref": "06/10/2026", "mes_ref": "10/2026", "du": 4, "dut": 22
 const fmt=n=>Number(Math.round(n||0)).toLocaleString('pt-BR');
 const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
 
+const SVG=p=>`<svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const IC={
+  resumo:SVG('<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>'),
+  producao:SVG('<path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/><path d="M17 18h.01"/><path d="M12 18h.01"/><path d="M7 18h.01"/>'),
+  suprimento:SVG('<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/><path d="m7.5 4.3 9 5.1"/>'),
+  pedidos:SVG('<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>'),
+  rupturas:SVG('<path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>'),
+  resultado:SVG('<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>'),
+  sams:SVG('<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2 2h2l2.7 12.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H5.1"/>'),
+  cascata:SVG('<path d="M12.8 2.2a2 2 0 0 0-1.6 0L2.6 6a1 1 0 0 0 0 1.8l8.6 3.9a2 2 0 0 0 1.6 0l8.6-3.9a1 1 0 0 0 0-1.8Z"/><path d="M2 12a1 1 0 0 0 .6.9l8.6 3.9a2 2 0 0 0 1.6 0l8.6-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .6.9l8.6 3.9a2 2 0 0 0 1.6 0l8.6-3.9A1 1 0 0 0 22 17"/>'),
+  tabletes:SVG('<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/>'),
+  prazos:SVG('<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>'),
+  insumos:SVG('<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10Z"/><path d="M2 21c0-3 1.9-5.4 5.1-6C9.5 14.5 12 13 13 12"/>')
+};
 const SCREENS=[
-  {id:'resumo', ic:'🏠', nm:'Resumo', sub:'Visão geral', co:'#13C79A'},
-  {id:'producao', ic:'🏭', nm:'Produção', sub:'Necessidade × Estoque', co:'#13C79A'},
-  {id:'suprimento', ic:'📦', nm:'Suprimento', sub:'Carteira × Estoque', co:'#5CC8FF'},
-  {id:'pedidos', ic:'📋', nm:'Pedidos', sub:'SKU × cliente', co:'#38BDF8'},
-  {id:'rupturas', ic:'⚠️', nm:'Rupturas', sub:'Falta mín. e pedido', co:'#FF5B17'},
-  {id:'resultado', ic:'🎯', nm:'Resultado', sub:'% da meta', co:'#F7A519'},
-  {id:'sams', ic:'🛒', nm:"SAM's Club", sub:'Pedido × Estoque', co:'#5C9BFF'},
-  {id:'cascata', ic:'🧱', nm:'Cascata', sub:'Tablete → CX', co:'#C06A3A'},
-  {id:'tabletes', ic:'🍬', nm:'Tabletes', sub:'Estoque × demanda', co:'#9B8CFF'},
-  {id:'prazos', ic:'⏱️', nm:'Prazos', sub:'Dias úteis · D-1', co:'#FF7A00'},
-  {id:'insumos', ic:'🍌', nm:'Insumos', sub:'Banana & MP', co:'#F4C430'},
+  {id:'resumo', ic:IC.resumo, nm:'Resumo', sub:'Visão geral', co:'#13C79A'},
+  {id:'producao', ic:IC.producao, nm:'Produção', sub:'Necessidade × Estoque', co:'#13C79A'},
+  {id:'suprimento', ic:IC.suprimento, nm:'Suprimento', sub:'Carteira × Estoque', co:'#5CC8FF'},
+  {id:'pedidos', ic:IC.pedidos, nm:'Pedidos', sub:'SKU × cliente', co:'#38BDF8'},
+  {id:'rupturas', ic:IC.rupturas, nm:'Rupturas', sub:'Falta mín. e pedido', co:'#FF5B17'},
+  {id:'resultado', ic:IC.resultado, nm:'Resultado', sub:'% da meta', co:'#F7A519'},
+  {id:'sams', ic:IC.sams, nm:"SAM's Club", sub:'Pedido × Estoque', co:'#5C9BFF'},
+  {id:'cascata', ic:IC.cascata, nm:'Cascata', sub:'Tablete → CX', co:'#C06A3A'},
+  {id:'tabletes', ic:IC.tabletes, nm:'Tabletes', sub:'Estoque × demanda', co:'#9B8CFF'},
+  {id:'prazos', ic:IC.prazos, nm:'Prazos', sub:'Dias úteis · D-1', co:'#FF7A00'},
+  {id:'insumos', ic:IC.insumos, nm:'Insumos', sub:'Banana & MP', co:'#F4C430'},
 ];
 function tint(hex,a){const n=parseInt(hex.slice(1),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`;}
 let cur='resumo', query='';
@@ -453,7 +467,7 @@ function rResumo(){
     ["sams",'🛒',"SAM's",`${fmt(firme)} cx firme`,'#5C9BFF']
   ].map(c=>`<div class="card" style="cursor:pointer;padding:14px 15px" onclick="go('${c[0]}')">
      <div style="display:flex;align-items:center;gap:11px">
-       <div style="width:40px;height:40px;border-radius:11px;background:${c[4]}22;color:${c[4]};display:flex;align-items:center;justify-content:center;font-size:21px;flex:0 0 auto">${c[1]}</div>
+       <div style="width:40px;height:40px;border-radius:11px;background:${c[4]}22;color:${c[4]};display:flex;align-items:center;justify-content:center;flex:0 0 auto">${(SCREENS.find(s=>s.id===c[0])||{}).ic||c[1]}</div>
        <div><div style="font-weight:800;font-size:14.5px">${c[2]}</div><div class="mut" style="font-size:12px">${c[3]}</div></div></div></div>`).join('');
   return `
   <div class="vhead"><span class="idx">★</span><h2>Resumo Gerencial</h2><span class="tag amb">mês ${DATA.mes_ref||''}</span>
